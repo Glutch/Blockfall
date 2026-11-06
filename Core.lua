@@ -9,7 +9,7 @@ local HELP = {
   "|cffffbd61/bf|r  open or close the game",
   "|cffffbd61/bf reset|r  move the window back to the middle",
   "Party: everyone in your group who opens Blockfall joins the lobby; press Start for a match.",
-  "Keys: Left/Right or A/D move, Down or S soft drop, Up/W/X/Z rotate, Space hard drop, C or Shift hold, P pause, Esc close",
+  "|cffffbd61/bf keys|r  change the keys (or click Keys in the window)",
 }
 
 SLASH_BLOCKFALL1 = "/blockfall"
@@ -18,11 +18,15 @@ SlashCmdList.BLOCKFALL = function(msg)
   local cmd = strlower(strtrim(msg or ""))
   if cmd == "" then
     ns.ToggleUI()
+  elseif cmd == "keys" then
+    if ns.Frame() and not ns.Frame():IsShown() then ns.ToggleUI() end
+    ns.KeysUI.Open()
   elseif cmd == "reset" then
     ns.ResetPosition()
     ns.Print("window position reset")
   else
     for _, line in ipairs(HELP) do print(line) end
+    print("Keys: " .. ns.Keys.Hint():gsub("\n", ", ") .. ", Esc close")
   end
 end
 
@@ -31,6 +35,7 @@ events:SetScript("OnEvent", function(self, event, arg1, ...)
     if arg1 ~= ADDON then return end
     BlockfallDB = BlockfallDB or {}
     BlockfallDB.best = BlockfallDB.best or 0
+    ns.Keys.Load(BlockfallDB)
     ns.game = ns.Game.New({ best = BlockfallDB.best })
     ns.CreateUI(ns.game)
     self:UnregisterEvent("ADDON_LOADED")

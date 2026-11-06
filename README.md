@@ -43,9 +43,11 @@ Notes for the agent:
 | P | Pause (solo only) |
 | Esc | Close |
 
+These are the defaults. **To change them:** click **Keys** in the window's title bar (or type `/bf keys`), click a slot, then press the key you want. Each action has three slots. Binding a key that another action uses moves it over. Right-click a slot to clear it, Esc cancels, and **Defaults** brings the standard keys back. Your keys are saved and kept across reloads. Esc can't be bound, because it always closes the game.
+
 Out of combat the game only takes these keys while you're playing; chat and everything else still work. On the start screen, in the lobby or while paused, WASD and the arrows move your character as usual.
 
-**In combat you keep playing.** The game won't let addons change which keys they take during a fight, so while Blockfall is open in combat it takes the whole keyboard: your other keybinds don't work until you close it. Esc closes it and gives the keyboard back; Enter and / still open chat. Mouse clicks on your action bars work as usual.
+**In combat you keep playing.** The game won't let addons change which keys they take during a fight, so while Blockfall is open in combat it takes the whole keyboard: your other keybinds don't work until you close it. Esc closes it and gives the keyboard back; Enter and / still open chat, unless you've bound them to a game action. Mouse clicks on your action bars work as usual.
 
 ## Party matches
 
@@ -64,5 +66,6 @@ Everyone in the match needs the same major version of Blockfall (1.3 or newer). 
 ## Commands
 
 - `/bf`: open or close
+- `/bf keys`: change the keys
 - `/bf reset`: move the window back to the middle
 - `/bf help`: list commands

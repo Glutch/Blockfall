@@ -51,12 +51,7 @@ local capturing, inCombat = false, false
 local held = {}             -- key name -> action, for keys we swallowed
 local keyDownTrusted = false
 
-local KEYMAP = {
-  LEFT = "left", RIGHT = "right", DOWN = "soft", UP = "cw",
-  A = "left", D = "right", S = "soft", W = "cw",
-  X = "cw", Z = "ccw", SPACE = "hard",
-  C = "hold", LSHIFT = "hold", RSHIFT = "hold", P = "pause",
-}
+-- Keys are the player's own (Keys.lua); ns.Keys.Action(key) says what a key does.
 
 ---------------------------------------------------------------------------
 -- Small helpers
@@ -154,7 +149,7 @@ local OVERLAY_TEXT = {
   paused = { "Paused", "P, Space or click to resume" },
   over = { "Game over", "Space or click to play again" },
 }
-local CONTROLS = "|cff8790b3Arrows or WASD   Space hard drop\nUp/W, X, Z rotate   C or Shift hold\nP pause|r"
+local function Controls() return "|cff8790b3" .. ns.Keys.Hint() .. "|r" end
 local BLOCKED = "|cffe0605aParty messages are blocked here|r"
 
 local function ResultLines(results)
@@ -199,12 +194,12 @@ local function OverlayState()
     sub = (results and (ResultLines(results) .. "\n\n") or "") ..
       n .. " players here\nSpace or click to start a match"
     button = "Start"
-    if not results then sub = sub .. "\n\n" .. CONTROLS end
+    if not results then sub = sub .. "\n\n" .. Controls() end
   else
     if phase == "over" then
       sub = "Score " .. Comma(game.score) .. (game.newBest and "\n|cffffbd61New best!|r" or "") .. "\n\n" .. sub
     elseif phase == "ready" then
-      sub = sub .. "\n\n" .. CONTROLS
+      sub = sub .. "\n\n" .. Controls()
     end
   end
   if P.Blocked() then sub = sub .. "\n\n" .. BLOCKED end
@@ -369,7 +364,7 @@ local function HandleKey(key)
     return true
   end
   if IsControlKeyDown() or IsAltKeyDown() then return false end
-  local action = KEYMAP[key]
+  local action = ns.Keys.Action(key)
   if not action then return false end
   if game.phase == "running" then
     if held[key] then return true end
@@ -404,10 +399,19 @@ local function OpenChat(text)
 end
 
 local function OnKeyDown(self, key)
-  if inCombat or InCombatLockdown() then
-    if not inCombat then EnterCombat() end
-    if key == "ENTER" and not (IsControlKeyDown() or IsAltKeyDown()) then OpenChat("") return end
-    if key == "/" then OpenChat("/") return end
+  local combat = inCombat or InCombatLockdown()
+  if combat and not inCombat then EnterCombat() end
+  -- The key editor gets first go (binding a key, Esc to cancel or close it).
+  if ns.KeysUI.IsOpen() then
+    local used = ns.KeysUI.Key(key)
+    if not combat then self:SetPropagateKeyboardInput(not used) end
+    return
+  end
+  if combat then
+    if not ns.Keys.Action(key) then   -- unless bound, Enter and / open chat
+      if key == "ENTER" and not (IsControlKeyDown() or IsAltKeyDown()) then OpenChat("") return end
+      if key == "/" then OpenChat("/") return end
+    end
     HandleKey(key)
     return
   end
@@ -625,10 +629,31 @@ function ns.CreateUI(theGame)
   close:SetSize(22, 22)
   close:SetPoint("TOPRIGHT", -3, -3)
 
+  -- "Keys" in the title bar opens the key binding editor.
+  local keysBtn = CreateFrame("Button", nil, frame)
+  keysBtn:SetSize(40, 18)
+  keysBtn:SetPoint("RIGHT", close, "LEFT", -4, 0)
+  keysBtn.text = Font(keysBtn, "GameFontHighlightSmall", C.label, "RIGHT")
+  keysBtn.text:SetPoint("RIGHT")
+  keysBtn.text:SetText("Keys")
+  keysBtn:SetScript("OnClick", function() ns.KeysUI.Toggle() end)
+  keysBtn:SetScript("OnEnter", function(self) self.text:SetTextColor(C.accent[1], C.accent[2], C.accent[3]) end)
+  keysBtn:SetScript("OnLeave", function(self) self.text:SetTextColor(C.label[1], C.label[2], C.label[3]) end)
+
   BuildWell()
   BuildSide()
   ns.PartyUI.Build(frame, PAD + BOX_W + PAD + SIDE_W + PAD, -TITLE_H,
     { Font = Font, Tex = Tex, Box = Box, C = C, Comma = Comma })
+  ns.KeysUI.Build(frame, PAD, -TITLE_H, BOX_W + PAD + SIDE_W, BOX_H,
+    { Font = Font, Box = Box, C = C },
+    {
+      onOpen = function()   -- editing keys pauses a solo game; a party match runs on
+        if game.phase == "running" and not ns.Party.InMatch() then game:Pause(true) end
+        ReleaseAll()
+        Refresh()
+      end,
+      onClose = function() Refresh() end,
+    })
   PlaceFrame()
 
   frame:SetScript("OnKeyDown", OnKeyDown)
@@ -641,6 +666,7 @@ function ns.CreateUI(theGame)
     Refresh()
   end)
   frame:SetScript("OnHide", function()
+    if ns.KeysUI.IsOpen() then ns.KeysUI.Close() end
     ns.Party.OnClose()                 -- leaves a party match (others see you as out)
     if game.phase == "running" then game:Pause(true) end
     UpdateKeyboard()

@@ -57,6 +57,38 @@ local function FullName(name, realm)
   return name .. "-" .. (myRealm or "")
 end
 
+-- WoW Forever: characters have a surname, UnitName returns (first, surname)
+-- instead of (name, realm), and names are unique across the region. There a
+-- player is keyed by "First Surname" with any "-Realm" dropped, so every
+-- client (and the echo of our own messages) agrees on the same key.
+local FOREVER = WOW_PROJECT_ID ~= nil and WOW_PROJECT_ID == (WOW_PROJECT_CAMELOT or 18)
+
+local function SurnameSep()
+  local c = Constants and Constants.CharacterNameSeparatorConsts
+  local sep = c and c.CHARACTERNAME_SURNAME_SEPARATOR
+  if type(sep) == "string" and sep ~= "" then return sep end
+  return " "
+end
+
+-- A name from a message (sender, roster, target) -> our key for that player.
+local function Canon(n)
+  if n == nil or Secret(n) or type(n) ~= "string" or n == "" then return nil end
+  if FOREVER then return (n:gsub("%-.*$", "")) end
+  return FullName(n)
+end
+
+-- A group unit -> our key for that player.
+local function UnitKey(unit)
+  local name, second = UnitName(unit)
+  if name == nil or Secret(name) or name == "" then return nil end
+  if Secret(second) then second = nil end
+  if FOREVER then
+    if second ~= nil and second ~= "" then name = name .. SurnameSep() .. second end
+    return Canon(name)
+  end
+  return FullName(name, second)
+end
+
 local function Short(full)
   local ok, s = pcall(Ambiguate, full, "none")
   if ok and type(s) == "string" and not Secret(s) then return s end
@@ -83,8 +115,7 @@ local function ReadRoster()
   local n = GetNumGroupMembers() or 0
   for i = 1, n do
     local unit = raid and ("raid" .. i) or (i == 1 and "player" or ("party" .. (i - 1)))
-    local name, realm = UnitName(unit)
-    local full = FullName(name, realm)
+    local full = UnitKey(unit)
     if full then
       local _, class = UnitClass(unit)
       rosterClass[full] = (class ~= nil and not Secret(class)) and class or false
@@ -402,7 +433,8 @@ end
 local function HandleStart(from, f)
   local id, seed, delay = f[2], tonumber(f[3]), tonumber(f[4])
   if not (id and seed and delay) then return end
-  local names = Proto.SplitNames(f[5])
+  local names = {}
+  for _, n in ipairs(Proto.SplitNames(f[5])) do names[#names + 1] = Canon(n) or n end
   local listed = false
   for _, n in ipairs(names) do if n == me then listed = true end end
   if match and not match.over and match.mine then
@@ -417,8 +449,8 @@ end
 function Party.OnMessage(prefix, text, channel, sender)
   if prefix ~= PREFIX then return end
   if Secret(text) or Secret(sender) or type(text) ~= "string" or type(sender) ~= "string" then return end
-  local from = FullName(sender)
-  if not from or from == me then return end
+  local from = Canon(sender)
+  if not from or from == me then return end   -- our own messages come back to us too
   local kind, f = Proto.Decode(text)
   if not kind then return end
   if kind == "H" then HandleHello(from, f) return end
@@ -439,7 +471,7 @@ function Party.OnMessage(prefix, text, channel, sender)
       pl.score, pl.lines = tonumber(f[3]) or pl.score, tonumber(f[4]) or pl.lines
       pl.board = Proto.UnpackBoard(f[5], Game.VISIBLE) or pl.board
       MarkOut(from)
-    elseif kind == "A" and match.mine and match.started and f[3] == me then
+    elseif kind == "A" and match.mine and match.started and Canon(f[3]) == me then
       local mine = match.players[me]
       local count = math.max(0, math.min(tonumber(f[4]) or 0, 10))
       if mine and mine.alive and count > 0 then
@@ -498,10 +530,9 @@ end
 -- Hooks from Core / UI
 ---------------------------------------------------------------------------
 function Party.Init()
-  local name, realm = UnitName("player")
   myRealm = GetNormalizedRealmName() or ""
   if Secret(myRealm) then myRealm = "" end
-  me = FullName(name, realm) or ("player-" .. myRealm)
+  me = UnitKey("player") or ("player-" .. myRealm)
   local _, class = UnitClass("player")
   myClass = (class ~= nil and not Secret(class)) and class or nil
   C_ChatInfo.RegisterAddonMessagePrefix(PREFIX)

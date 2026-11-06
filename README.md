@@ -59,7 +59,7 @@ Out of combat the game only takes these keys while you're playing; chat and ever
 - Combat doesn't stop you (see the keys note above). Closing the window counts as leaving the match.
 - The game can block addon messages in some places (such as boss fights). Blockfall says so, and solo play still works.
 
-Everyone in the match needs the same major version of Blockfall. Players with an older version show as "needs update".
+Everyone in the match needs the same major version of Blockfall (1.3 or newer). Players with an older version show as "needs update".
 
 ## Commands
 

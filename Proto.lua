@@ -2,7 +2,8 @@
 -- API), shared by Party.lua and the headless tests.
 --
 -- Every message is "<type>:<field>:<field>..." in plain ASCII, at most 255 bytes,
--- never containing "|" or control characters. Names are full "Name-Realm".
+-- never containing "|" or control characters. Names are "Name-Realm", or on
+-- WoW Forever "First Surname" (names are unique there; see Party.lua).
 --   H:<proto>:<q|a>:<status>:<matchId|->:<wins>   hello / heartbeat (q asks for answers)
 --   B                                             bye (window closed / leaving)
 --   S:<matchId>:<seed>:<delayMs>:<name,name,...>  start a match
@@ -13,8 +14,8 @@ local _, ns = ...
 ns = ns or {}
 
 local Proto = {}
-Proto.VERSION = "1.0"
-Proto.MAJOR = 1
+Proto.VERSION = "2.0"   -- 2: Forever names are "First Surname" (1.x keyed them wrongly)
+Proto.MAJOR = 2
 Proto.MAX_LEN = 255
 
 -- 32 chat-safe symbols: 5 bits each, a 10-wide row in two characters.

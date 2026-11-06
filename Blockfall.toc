@@ -1,0 +1,15 @@
+## Interface: 16001
+## Title: |cffffbd61Block|rfall
+## Notes: A falling-blocks puzzle game in a small window, with party matches. /blockfall or /bf
+## Author: olive
+## Version: 1.1.0
+## SavedVariables: BlockfallDB
+## IconTexture: Interface\Icons\INV_Misc_Gem_Variety_01
+## Category: Miscellaneous
+
+Game.lua
+Proto.lua
+Party.lua
+UI.lua
+PartyUI.lua
+Core.lua

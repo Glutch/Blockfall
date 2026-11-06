@@ -134,12 +134,10 @@ local function MyStatus()
       if not match.started then return "R" end
       local pl = match.players[me]
       if pl and not pl.alive then return "O" end
-      if ns.InCombat() then return "C" end
       return "P"
     end
     return "W"
   end
-  if ns.InCombat() then return "C" end
   if g and (g.phase == "running" or g.phase == "paused") then return "S" end
   return "L"
 end

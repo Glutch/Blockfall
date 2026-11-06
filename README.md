@@ -43,7 +43,9 @@ Notes for the agent:
 | P | Pause (solo only) |
 | Esc | Close |
 
-The game only takes these keys while you're playing. Chat and everything else still work. Entering combat pauses your game and gives the keyboard back.
+Out of combat the game only takes these keys while you're playing; chat and everything else still work.
+
+**In combat you keep playing.** The game won't let addons change which keys they take during a fight, so while Blockfall is open in combat it takes the whole keyboard: your other keybinds don't work until you close it. Esc closes it and gives the keyboard back; Enter and / still open chat. Mouse clicks on your action bars work as usual.
 
 ## Party matches
 
@@ -54,7 +56,7 @@ The game only takes these keys while you're playing. Chat and everything else st
 
 - Up to 8 players. Opponents show as small boards beside your well.
 - If you open Blockfall mid-match, you watch and join the next round.
-- Combat freezes only your own game. Closing the window counts as leaving the match.
+- Combat doesn't stop you (see the keys note above). Closing the window counts as leaving the match.
 - The game can block addon messages in some places (such as boss fights). Blockfall says so, and solo play still works.
 
 Everyone in the match needs the same major version of Blockfall. Players with an older version show as "needs update".

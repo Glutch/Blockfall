@@ -47,7 +47,7 @@ local stat = {}
 local popText, popT = nil, 0
 local seenVersion, seenClears, seenParty = -1, 0, -1
 local garbageBar, partyShown = nil, false
-local capturing, inCombat, combatPaused = false, false, false
+local capturing, inCombat = false, false
 local held = {}             -- key name -> action, for keys we swallowed
 local keyDownTrusted = false
 
@@ -179,8 +179,7 @@ local function OverlayState()
   if P.InMatch() then
     if phase == "running" then return nil end
     if phase == "paused" then
-      if inCombat then return "Paused (combat)", "The others play on.\nYou can carry on after combat." end
-      return "Paused (combat)", "Space or click to carry on", "Resume"
+      return "Paused", "Space or click to carry on", "Resume"
     end
     local mine = P.Match().players[P.Me()]
     return "K.O.", (mine and mine.place and ("Place " .. mine.place .. "\n") or "") .. "Watching the others"
@@ -201,15 +200,11 @@ local function OverlayState()
     button = "Start"
     if not results then sub = sub .. "\n\n" .. CONTROLS end
   else
-    if phase == "paused" and combatPaused then title = "Paused (combat)" end
     if phase == "over" then
       sub = "Score " .. Comma(game.score) .. (game.newBest and "\n|cffffbd61New best!|r" or "") .. "\n\n" .. sub
     elseif phase == "ready" then
       sub = sub .. "\n\n" .. CONTROLS
     end
-  end
-  if inCombat then
-    sub = (phase == "paused" and "Resumes after combat" or "Play after combat")
   end
   if P.Blocked() then sub = sub .. "\n\n" .. BLOCKED end
   return title, sub, button
@@ -224,7 +219,7 @@ local function RenderOverlay()
   overlay.button:SetShown(button ~= nil)
   if button then
     overlay.button:SetText(button)
-    overlay.button:SetEnabled(not inCombat)
+    overlay.button:SetEnabled(true)
   end
   overlay:Show()
 end
@@ -298,24 +293,20 @@ ns.Refresh = Refresh
 -- Game flow
 ---------------------------------------------------------------------------
 local function PrimaryAction()
-  if inCombat then return end
   local P = ns.Party
   if P.Countdown() or P.Watching() then return end
   if P.InMatch() then
     if game.phase == "paused" then
-      combatPaused = false
       game:Pause(false)
     end
     Refresh()
     return
   end
   if game.phase == "ready" or game.phase == "over" then
-    combatPaused = false
     rep:Clear()
     -- In a party lobby this starts a match for everyone; otherwise a solo game.
     if not P.RequestStart() then game:Start({ solo = true }) end
   elseif game.phase == "paused" then
-    combatPaused = false
     game:Pause(false)
   end
   Refresh()
@@ -326,26 +317,29 @@ local function ReleaseAll()
   rep:Clear()
 end
 
--- Keyboard capture only while shown and out of combat; propagation can't be
--- changed in combat, so we let go of the keyboard entirely then.
+-- The keyboard stays enabled for good: EnableKeyboard is protected in combat,
+-- and a hidden frame gets no keys anyway. Out of combat, OnKeyDown decides per
+-- key whether it passes on to the game. In combat that choice can't change, so
+-- for the whole fight the open window takes every key (Esc closes it and gives
+-- the keyboard back; Enter and / open chat).
 local function UpdateKeyboard()
-  local want = frame:IsShown() and not inCombat and not InCombatLockdown()
-  if want == capturing then return end
-  if want then
-    pcall(frame.SetPropagateKeyboardInput, frame, true)
+  if not capturing and not InCombatLockdown() then
+    if pcall(frame.EnableKeyboard, frame, true) then capturing = true end
   end
-  if pcall(frame.EnableKeyboard, frame, want) then capturing = want end
-  ReleaseAll()
+  if not frame:IsShown() then ReleaseAll() end
 end
 
+local function SetPropagate(v)
+  if InCombatLockdown() then return false end
+  return pcall(frame.SetPropagateKeyboardInput, frame, v)
+end
+
+-- PLAYER_REGEN_DISABLED fires just before the lockdown starts: the last chance
+-- to set how keys behave during the fight.
 local function EnterCombat()
   inCombat = true
   if not frame then return end
-  if game.phase == "running" then
-    game:Pause(true)
-    combatPaused = true
-  end
-  UpdateKeyboard()
+  SetPropagate(false)
   Refresh()
 end
 
@@ -353,6 +347,7 @@ local function LeaveCombat()
   inCombat = false
   if not frame then return end
   UpdateKeyboard()
+  SetPropagate(true)
   Refresh()
 end
 ns.EnterCombat, ns.LeaveCombat = EnterCombat, LeaveCombat
@@ -362,12 +357,7 @@ function ns.IsShown() return frame ~= nil and frame:IsShown() end
 
 -- A party match just began (after the countdown): fresh input state.
 function ns.OnMatchStart()
-  combatPaused = false
   rep:Clear()
-  if inCombat then
-    game:Pause(true)
-    combatPaused = true
-  end
   Refresh()
 end
 
@@ -405,9 +395,19 @@ local function HandleKey(key)
   return false
 end
 
+-- In combat every key reaches us and none goes on, so chat keys open chat here.
+local function OpenChat(text)
+  if ChatFrame_OpenChat then ChatFrame_OpenChat(text) return true end
+  if ChatFrameUtil and ChatFrameUtil.OpenChat then ChatFrameUtil.OpenChat(text) return true end
+  return false
+end
+
 local function OnKeyDown(self, key)
   if inCombat or InCombatLockdown() then
-    EnterCombat()
+    if not inCombat then EnterCombat() end
+    if key == "ENTER" and not (IsControlKeyDown() or IsAltKeyDown()) then OpenChat("") return end
+    if key == "/" then OpenChat("/") return end
+    HandleKey(key)
     return
   end
   local ours = HandleKey(key)
@@ -635,6 +635,7 @@ function ns.CreateUI(theGame)
   frame:SetScript("OnUpdate", OnUpdate)
   frame:SetScript("OnShow", function()
     UpdateKeyboard()
+    if not inCombat then SetPropagate(true) end -- out of combat: pass keys on unless they're ours
     ns.Party.OnOpen()
     Refresh()
   end)
@@ -644,10 +645,11 @@ function ns.CreateUI(theGame)
     UpdateKeyboard()
   end)
 
-  -- Esc closes the window (when the keyboard is not ours, e.g. in combat).
+  -- Esc via the game menu also closes the window.
   if UISpecialFrames then tinsert(UISpecialFrames, "BlockfallFrame") end
 
   inCombat = InCombatLockdown() and true or false
+  UpdateKeyboard()
 end
 
 function ns.ToggleUI()

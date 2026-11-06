@@ -34,16 +34,16 @@ Notes for the agent:
 
 | Key | Action |
 |---|---|
-| Left / Right | Move |
-| Down | Soft drop |
-| Up or X | Rotate clockwise |
+| Left / Right, or A / D | Move |
+| Down or S | Soft drop |
+| Up, W or X | Rotate clockwise |
 | Z | Rotate counter-clockwise |
 | Space | Hard drop; also start, resume, replay |
 | C or Shift | Hold |
 | P | Pause (solo only) |
 | Esc | Close |
 
-Out of combat the game only takes these keys while you're playing; chat and everything else still work.
+Out of combat the game only takes these keys while you're playing; chat and everything else still work. On the start screen, in the lobby or while paused, WASD and the arrows move your character as usual.
 
 **In combat you keep playing.** The game won't let addons change which keys they take during a fight, so while Blockfall is open in combat it takes the whole keyboard: your other keybinds don't work until you close it. Esc closes it and gives the keyboard back; Enter and / still open chat. Mouse clicks on your action bars work as usual.
 

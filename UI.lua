@@ -53,6 +53,7 @@ local keyDownTrusted = false
 
 local KEYMAP = {
   LEFT = "left", RIGHT = "right", DOWN = "soft", UP = "cw",
+  A = "left", D = "right", S = "soft", W = "cw",
   X = "cw", Z = "ccw", SPACE = "hard",
   C = "hold", LSHIFT = "hold", RSHIFT = "hold", P = "pause",
 }
@@ -153,7 +154,7 @@ local OVERLAY_TEXT = {
   paused = { "Paused", "P, Space or click to resume" },
   over = { "Game over", "Space or click to play again" },
 }
-local CONTROLS = "|cff8790b3Left/Right move   Down soft drop\nUp, X, Z rotate   Space hard drop\nC or Shift hold   P pause|r"
+local CONTROLS = "|cff8790b3Arrows or WASD   Space hard drop\nUp/W, X, Z rotate   C or Shift hold\nP pause|r"
 local BLOCKED = "|cffe0605aParty messages are blocked here|r"
 
 local function ResultLines(results)

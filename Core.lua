@@ -9,7 +9,7 @@ local HELP = {
   "|cffffbd61/bf|r  open or close the game",
   "|cffffbd61/bf reset|r  move the window back to the middle",
   "Party: everyone in your group who opens Blockfall joins the lobby; press Start for a match.",
-  "Keys: Left/Right move, Down soft drop, Up/X/Z rotate, Space hard drop, C or Shift hold, P pause, Esc close",
+  "Keys: Left/Right or A/D move, Down or S soft drop, Up/W/X/Z rotate, Space hard drop, C or Shift hold, P pause, Esc close",
 }
 
 SLASH_BLOCKFALL1 = "/blockfall"

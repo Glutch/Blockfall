@@ -14,8 +14,8 @@ local _, ns = ...
 ns = ns or {}
 
 local Proto = {}
-Proto.VERSION = "2.0"   -- 2: Forever names are "First Surname" (1.x keyed them wrongly)
-Proto.MAJOR = 2
+Proto.VERSION = "3.0"   -- 3: 1 row per line cleared, aimed at the clearest board, time levels
+Proto.MAJOR = 3
 Proto.MAX_LEN = 255
 
 -- 32 chat-safe symbols: 5 bits each, a 10-wide row in two characters.

@@ -49,11 +49,15 @@ Out of combat the game only takes these keys while you're playing; chat and ever
 
 **In combat you keep playing.** The game won't let addons change which keys they take during a fight, so while Blockfall is open in combat it takes the whole keyboard: your other keybinds don't work until you close it. Esc closes it and gives the keyboard back; Enter and / still open chat, unless you've bound them to a game action. Mouse clicks on your action bars work as usual.
 
+## It keeps getting faster
+
+The speed goes up a level every 10 lines, and also every 30 seconds of play, whichever comes first. Time spent paused doesn't count. Every game, solo or party, ends sooner or later.
+
 ## Party matches
 
 1. Everyone in the party or raid opens Blockfall with `/bf`. The window shows a party list with everyone who has it open.
 2. Anyone presses **Start**. After a 3-second countdown, everyone gets the same piece order.
-3. Clearing 2, 3 or 4 lines sends 1, 2 or 4 garbage rows to an opponent. Incoming garbage shows as a red bar, and your own clears cancel it first.
+3. Every line you clear sends one gray garbage row to the opponent doing best: the one with the clearest board (lowest stack). Their play area shrinks. Incoming garbage shows as a red bar beside your well, and your own clears cancel it first.
 4. The last player standing wins. Placements and session wins show at the end; Space starts the next round.
 
 - Up to 8 players. Opponents show as small boards beside your well.
@@ -61,7 +65,7 @@ Out of combat the game only takes these keys while you're playing; chat and ever
 - Combat doesn't stop you (see the keys note above). Closing the window counts as leaving the match.
 - The game can block addon messages in some places (such as boss fights). Blockfall says so, and solo play still works.
 
-Everyone in the match needs the same major version of Blockfall (1.3 or newer). Players with an older version show as "needs update".
+Everyone in the match needs the same major version of Blockfall (1.5 or newer). Players with an older version show as "needs update".
 
 ## Commands
 

@@ -15,6 +15,7 @@ Game.LOCK_DELAY = 0.5               -- seconds a grounded piece may still move
 Game.MAX_RESETS = 15                -- moves/rotations that restart the lock timer
 Game.CLEAR_TIME = 0.3               -- line-clear flash before the rows collapse
 Game.LINES_PER_LEVEL = 10
+Game.SECONDS_PER_LEVEL = 30         -- it also speeds up with time: one level every 30 s of play
 Game.MAX_LEVEL = 20
 Game.QUEUE = 6                      -- pieces kept ready (next preview shows 3)
 
@@ -77,8 +78,8 @@ local NO_KICK = { { 0, 0 } }
 local LINE_SCORE = { 100, 300, 500, 800 }
 Game.LINE_SCORE = LINE_SCORE
 
--- Versus: garbage rows sent for clearing 1/2/3/4 lines.
-local ATTACK = { 0, 1, 2, 4 }
+-- Versus: garbage rows sent for clearing 1/2/3/4 lines (as many as you cleared).
+local ATTACK = { 1, 2, 3, 4 }
 Game.ATTACK = ATTACK
 
 -- Seeded generator (Park-Miller): exact in doubles, so every client running the
@@ -119,6 +120,7 @@ function Game:Reset()
   self.fall, self.lockT, self.resets, self.lowest = 0, 0, 0, 0
   self.lastClear, self.lastPoints, self.clears = 0, 0, 0
   self.garbage = {}                 -- incoming rows waiting: { {count, hole}, ... }
+  self.elapsed = 0                  -- seconds of play (not paused), drives the time levels
   self.won = false
   self.newBest = false
   self.version = (self.version or 0) + 1
@@ -231,8 +233,22 @@ end
 
 function Game:Interval() return Game.GravityInterval(self.level) end
 
+-- The level is the higher of the line level (every 10 lines) and the time
+-- level (every 30 s of play), so the game keeps getting faster.
+function Game:LevelFor()
+  local byLines = 1 + math.floor(self.lines / Game.LINES_PER_LEVEL)
+  local byTime = self.startLevel + math.floor((self.elapsed or 0) / Game.SECONDS_PER_LEVEL)
+  return math.min(math.max(self.startLevel, byLines, byTime), Game.MAX_LEVEL)
+end
+
 function Game:Update(dt)
   if self.phase ~= "running" then return end
+  self.elapsed = (self.elapsed or 0) + dt
+  local level = self:LevelFor()
+  if level ~= self.level then
+    self.level = level
+    self:Changed()
+  end
   if self.clearing then
     self.clearing.t = self.clearing.t + dt
     if self.clearing.t >= Game.CLEAR_TIME then self:FinishClear() end
@@ -297,7 +313,7 @@ function Game:Lock()
     self.score = self.score + points
     self.lastPoints, self.clears = points, self.clears + 1
     self.lines = self.lines + #full
-    self.level = math.min(math.max(self.startLevel, 1 + math.floor(self.lines / Game.LINES_PER_LEVEL)), Game.MAX_LEVEL)
+    self.level = self:LevelFor()
     self.clearing = { rows = full, t = 0 }
     self:CheckBest()
     if self.versus then

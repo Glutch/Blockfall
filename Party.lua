@@ -361,13 +361,44 @@ function Party.RequestStart()
   return true
 end
 
+-- How full a board is: stack height (rows from the highest block down) and
+-- filled cells. A board we haven't seen yet counts as empty.
+local function Fullness(board)
+  local height, cells = 0, 0
+  if not board then return 0, 0 end
+  for r, v in ipairs(board) do
+    if v > 0 then
+      if height == 0 then height = #board - r + 1 end
+      for x = 1, Game.W do if Proto.Bit(v, x) then cells = cells + 1 end end
+    end
+  end
+  return height, cells
+end
+Party.Fullness = Fullness
+
+-- Garbage goes to the opponent doing best: the clearest board (lowest stack,
+-- then fewest blocks), then the highest score, then by name.
+local function BestOpponent()
+  local best, bh, bc, bs
+  for _, n in ipairs(AliveList()) do
+    if n ~= me then
+      local pl = match.players[n]
+      local hgt, cells = Fullness(pl.board)
+      local score = pl.score or 0
+      if not best or hgt < bh or (hgt == bh and (cells < bc or (cells == bc and
+        (score > bs or (score == bs and n < best))))) then
+        best, bh, bc, bs = n, hgt, cells, score
+      end
+    end
+  end
+  return best
+end
+Party.BestOpponent = function() return match and BestOpponent() end
+
 local function SendAttack(count)
   if not (match and match.mine and match.started and not match.over) then return end
-  local targets = {}
-  for _, n in ipairs(AliveList()) do if n ~= me then targets[#targets + 1] = n end end
-  if #targets == 0 then return end
-  match.target = match.target % #targets + 1
-  local target = targets[match.target]
+  local target = BestOpponent()
+  if not target then return end
   local hole = math.random(1, Game.W)
   SendCtl(Proto.Encode("A", match.id, target, count, hole), match.id)
   match.lastAttack = { target = target, count = count, t = Now() }

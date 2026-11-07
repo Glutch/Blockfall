@@ -2,7 +2,7 @@
 ## Title: |cffffbd61Block|rfall
 ## Notes: A falling-blocks puzzle game in a small window, with party matches. /blockfall or /bf
 ## Author: olive
-## Version: 1.4.0
+## Version: 1.5.0
 ## SavedVariables: BlockfallDB
 ## IconTexture: Interface\Icons\INV_Misc_Gem_Variety_01
 ## Category: Miscellaneous
